@@ -1,0 +1,102 @@
+x-defaults:
+  environment: &environment
+    ACCOUNTS_URL: ${ACCOUNTS_URL:-https://accounts.weezevent.com/realms/accounts-dev}
+    ACCOUNTS_CLIENT_IDENTIFIER: ${ACCOUNTS_CLIENT_IDENTIFIER:-ask_backend_local}
+    ACCOUNTS_CLIENT_SECRET: ${ACCOUNTS_CLIENT_SECRET}
+    AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-eu-west-1}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-eu.amazon.nova-lite-v1:0}
+    MEM0_EXTRACTION_MODEL: ${MEM0_EXTRACTION_MODEL:-mistral.mistral-7b-instruct-v0:2}
+    QDRANT_HOST: qdrant
+    QDRANT_PORT: "6333"
+    GIGZ_LOGS_BASE_URL: ${GIGZ_LOGS_BASE_URL}
+    GIGZ_LOGS_TOKEN: ${GIGZ_LOGS_TOKEN}
+    GIGZ_FOREST_BASE_URL: ${GIGZ_FOREST_BASE_URL}
+    GIGZ_FOREST_USER: ${GIGZ_FOREST_USER}
+    GIGZ_FOREST_PASSWORD: ${GIGZ_FOREST_PASSWORD}
+    SENTRY_DSN: ${SENTRY_DSN}
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:v1.13.6
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - ask
+      - frontend
+
+  # ---------------------------------------------------------------------------
+  # ask-backend
+  # ---------------------------------------------------------------------------
+  ask-base:
+    &ask-base
+    build:
+      context: ../ask-backend
+    volumes:
+      - ../ask-backend/ask:/code/ask:ro
+    environment:
+      <<: *environment
+    depends_on:
+      - qdrant
+
+  ask:
+    <<: *ask-base
+    ports:
+      - "8000:8000"
+    command:
+      - --reload
+
+  ask-debug:
+    <<: *ask-base
+    entrypoint: ""
+    command:
+      - ipython
+
+  ask-pytest:
+    &ask-pytest
+    <<: *ask-base
+    entrypoint:
+      - "pytest"
+      - "-p no:cacheprovider"
+      - "ask"
+
+  ask-ci-pytest:
+    <<: *ask-pytest
+    volumes: []
+
+  # ---------------------------------------------------------------------------
+  # ask-frontend
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../ask-frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../ask-frontend:/code
+      - /code/node_modules
+    environment:
+      VITE_API_URL: https://api.ask.local
+    ports:
+      - "3000:3000"
+
+volumes:
+  qdrant_data:
+  caddy_data:
+  caddy_config:
