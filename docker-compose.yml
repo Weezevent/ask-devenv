@@ -1,0 +1,24 @@
+include:
+  - docker-compose.backend.yml
+  - docker-compose.frontend.yml
+
+# ============================================================================
+# REVERSE PROXY — defined here so it depends on services from all layers
+# ============================================================================
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl/certs:/etc/nginx/ssl:ro
+    depends_on:
+      - ask
+      - frontend
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
