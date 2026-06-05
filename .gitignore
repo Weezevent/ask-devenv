@@ -1,2 +1,18 @@
+# Project repositories (cloned by setup.sh)
+projects/
+
+# SSL certificates (generated locally)
+nginx/ssl/certs/
+
+# Local configuration
 .env
-certs/
+*.local
+
+# OS / IDE
+.DS_Store
+.kiro/
+.vscode/
+.idea/
+
+# Logs
+*.log

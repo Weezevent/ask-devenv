@@ -1,0 +1,12 @@
+services:
+  frontend:
+    build:
+      context: ./projects/frontend/ask-frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./projects/frontend/ask-frontend:/code
+      - /code/node_modules
+    environment:
+      VITE_API_URL: https://api.ask.local
+    ports:
+      - "3000:3000"
