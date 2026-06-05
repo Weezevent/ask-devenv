@@ -16,6 +16,7 @@ x-defaults:
     GIGZ_FOREST_USER: ${GIGZ_FOREST_USER}
     GIGZ_FOREST_PASSWORD: ${GIGZ_FOREST_PASSWORD}
     SENTRY_DSN: ${SENTRY_DSN}
+    CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:7095,http://localhost:3000}
 
 services:
   qdrant:
